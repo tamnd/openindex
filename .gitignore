@@ -1,0 +1,23 @@
+# Build output
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+
+# Local data, indexes, and crawl artifacts
+/data/
+*.warc
+*.warc.gz
+*.seg
+*.ciff
+
+# Editor / OS noise
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Go workspace files (kept local)
+go.work
+go.work.sum
