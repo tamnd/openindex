@@ -2,7 +2,7 @@
 
 A web-scale search engine, built from scratch in Go, whose index is open.
 
-Only four organizations on Earth run a real general web index — Google, Microsoft,
+Only four organizations on Earth run a real general web index: Google, Microsoft,
 Yandex, Baidu. Everyone else rents. That arrangement just broke. The Bing Web Search
 API returned `410 Gone` on August 11, 2025 and took the entire tier of products that
 resold it down with it. In the same window a US federal court ruled Google an illegal
@@ -33,7 +33,7 @@ time-boxed:
 - **The moat is being legally opened.** *United States v. Google* set the direction:
   for the first time there is a potential legal on-ramp to the data flywheel that made
   every prior entrant fail at cold start.
-- **Demand moved from links to answers** — and the answer leaders are built on
+- **Demand moved from links to answers**, and the answer leaders are built on
   contested, opaquely crawled foundations. An answer engine on a cleanly crawled,
   consent-respecting, auditable index is a provenance story none of the incumbents
   can tell.
@@ -48,7 +48,7 @@ time-boxed:
    character span in a source document, verified by an entailment check, and traceable.
    The engine answers what it can prove and says so when it cannot.
 3. **Decentralization where it actually works.** The expensive, embarrassingly parallel
-   work — crawl fetch and raw-shard storage — federates across volunteer and partner
+   work, crawl fetch and raw-shard storage, federates across volunteer and partner
    operators. The authoritative index and the serving path stay centralized or
    federated among vetted operators, because every fully-P2P search engine to date
    (YaCy, FAROO, Presearch) traded away the latency and spam-resistance that make
@@ -99,11 +99,11 @@ that cut across it.
 
 The data plane flows up. The crawler writes WARC and emits parsed documents and
 extracted links. The content store and link graph hold them. The indexing pipeline
-turns documents into inverted-index segments and embedding vectors — incrementally for
+turns documents into inverted-index segments and embedding vectors, incrementally for
 freshness, with periodic batch rebuilds. Ranking composes the lexical and vector
 stores into a cascade, the serving tree fans queries out to leaves and merges, and the
 answer engine layers grounded synthesis on top. The open-index subsystem taps the data
-plane at three points — corpus, graph, index — and publishes them as artifacts.
+plane at three points (corpus, graph, index) and publishes them as artifacts.
 
 ## Why Go
 
@@ -166,10 +166,10 @@ milestone map, cost model, and risk register live in the specification.
 
 ## Specification
 
-The complete architecture and implementation specification — vision, market analysis,
-and a document per subsystem with the algorithms, formats, and trade-offs spelled out
-as Architecture Decision Records — is maintained alongside the code and is the source
-of truth for every design choice here.
+The complete architecture and implementation specification covers vision, market
+analysis, and a document per subsystem with the algorithms, formats, and trade-offs
+spelled out as Architecture Decision Records. It is maintained alongside the code and
+is the source of truth for every design choice here.
 
 ## License
 

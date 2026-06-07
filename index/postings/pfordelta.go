@@ -2,8 +2,8 @@ package postings
 
 // PForDelta (Patched Frame-of-Reference) bit-packs a block of values at a width
 // that fits the bulk of the distribution and stores the few values that exceed
-// it as patched exceptions (doc 05.2). This keeps one outlier frequency — a stop
-// word appearing hundreds of times in a document — from forcing the whole block
+// it as patched exceptions (doc 05.2). This keeps one outlier frequency - a stop
+// word appearing hundreds of times in a document - from forcing the whole block
 // to a wide bit width, which plain FOR would do. The codec uses it for the
 // frequency stream; doc-id gaps use plain FOR, which the block layout records.
 

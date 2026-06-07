@@ -1,5 +1,5 @@
 // Package forward is the forward store (indexer doc 05.5): the per-document
-// fields snippet generation needs after ranking — title, URL, body, and the
+// fields snippet generation needs after ranking - title, URL, body, and the
 // field norms BM25F scores against. Following Lucene's stored-fields format,
 // documents are grouped into compressed chunks with a monotonic block-offset
 // index (first doc id and byte offset per chunk), so a document is reached by a

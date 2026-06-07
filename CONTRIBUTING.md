@@ -47,6 +47,6 @@ check, and a check that the generated proto code is up to date. All must be gree
 ## Tests
 
 Every codec, scorer, and data structure has unit tests. The relevance harness
-(NDCG@10 / MRR@10 / Recall@k) is itself a test and gates changes to the ranking path —
+(NDCG@10 / MRR@10 / Recall@k) is itself a test and gates changes to the ranking path:
 a regression past threshold fails the build. That is how the relevance bar is enforced
 mechanically rather than by reviewer vigilance.

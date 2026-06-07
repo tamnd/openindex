@@ -1,7 +1,7 @@
 // Package vector holds the shared vocabulary of the dense-retrieval subsystem
 // (architecture doc 06): the vector type, the distance metric, the pure-Go
 // distance kernels, and the neighbor result. It is the leaf of the vector
-// package group — ann, quantize, and embed all depend on it — so the distance
+// package group - ann, quantize, and embed all depend on it - so the distance
 // math lives in exactly one place and every component scores the same way.
 //
 // The distance kernels are deliberately pure Go. Doc 01's native-boundary
@@ -18,13 +18,13 @@ import (
 
 // Vector is a dense embedding in row-major float32. Length is the dimension;
 // the subsystem stores them by the thousands per segment, so float32 (not
-// float64) is the storage and arithmetic width — it halves memory at no
+// float64) is the storage and arithmetic width - it halves memory at no
 // measurable recall cost for retrieval.
 type Vector []float32
 
 // Metric selects how two vectors are compared. The convention across the
 // subsystem is that a SMALLER distance means MORE similar, so inner-product and
-// cosine are returned negated — a max-inner-product search becomes a
+// cosine are returned negated - a max-inner-product search becomes a
 // min-distance search and the same top-K min-heap serves every metric.
 type Metric uint8
 

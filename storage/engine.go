@@ -1,11 +1,11 @@
 // Package storage is the embedded key-value substrate the whole engine stands
 // on: the WebTable document store (storage doc 03.2), the link-graph adjacency
 // index (03.4), and the small metadata stores. It is a leaf in the dependency
-// order — index, rank, and serve depend on it, it depends on nothing in the
+// order - index, rank, and serve depend on it, it depends on nothing in the
 // module except the shared types and telemetry (impl spec 02.3).
 //
 // The package is built against the Engine seam rather than a concrete store.
-// The implementation spec chose one engine per workload shape — Pebble for the
+// The implementation spec chose one engine per workload shape - Pebble for the
 // WebTable (stable read latency and low space amplification at billions of
 // rows), Badger for the large-value blob store, bbolt for small config (storage
 // doc 03.1). Those production engines plug in behind Engine; the in-process

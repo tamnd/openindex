@@ -21,7 +21,7 @@ import (
 
 // Entry is what the dictionary returns for a term: its document frequency and
 // how to reach its postings. When DocFreq == 1 the single document id is stored
-// inline (Singleton), so a one-document term costs no separate posting list —
+// inline (Singleton), so a one-document term costs no separate posting list -
 // the SingletonDocID optimization of doc 05.3.
 type Entry struct {
 	DocFreq      int

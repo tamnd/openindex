@@ -1,8 +1,8 @@
 // Package search is the top-K retrieval loop (indexer doc 05.3): Block-Max WAND
 // over a disjunction of term posting lists. WAND maintains a competitive
 // threshold (the current k-th best score) and uses each term's score upper
-// bound to pick a pivot document — the smallest doc id whose accumulated upper
-// bound could beat the threshold — so documents that cannot enter the top-K are
+// bound to pick a pivot document - the smallest doc id whose accumulated upper
+// bound could beat the threshold - so documents that cannot enter the top-K are
 // never scored. Block-Max WAND tightens that with per-block impact bounds
 // (index/postings block-max metadata), skipping whole blocks whose maximum
 // contribution cannot beat the threshold.
@@ -222,7 +222,7 @@ func pickAdvance(live []*termState, pivotDoc openindex.DocID) int {
 
 // pushTop inserts hit into the top-k heap and returns the new threshold (the
 // k-th best score once the heap is full, else 0). When the heap is full, hit
-// replaces the root if it ranks better by (score desc, doc asc) — the same
+// replaces the root if it ranks better by (score desc, doc asc) - the same
 // tie-break the final ordering uses, so equal-scoring documents resolve toward
 // the smaller doc id deterministically.
 func pushTop(h *minHeap, hit Hit, k int, threshold openindex.Score) openindex.Score {

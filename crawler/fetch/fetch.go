@@ -6,7 +6,7 @@
 //     host, so a crawl touching a million domains does not exhaust file
 //     descriptors or stall behind head-of-line connections;
 //   - forward-confirmed reverse DNS (FCrDNS) verification, so a host claiming to
-//     be a search engine — or claiming our own crawler identity — is checked
+//     be a search engine - or claiming our own crawler identity - is checked
 //     against both directions of DNS before it is trusted (04.5);
 //   - a render gate that decides whether a page needs a headless browser, kept
 //     behind an interface because rendering is the most expensive thing the
@@ -61,7 +61,7 @@ type Resolver interface {
 // VerifyFCrDNS performs forward-confirmed reverse DNS for an IP claiming to
 // belong to expectedDomain (04.5). The IP's PTR record must resolve to a name
 // under expectedDomain, and that name must forward-resolve back to the same IP.
-// Either half failing means the claim is unverified — the pattern used both to
+// Either half failing means the claim is unverified - the pattern used both to
 // honor "only fetch what verifies" and to authenticate crawlers that imitate us.
 func VerifyFCrDNS(ctx context.Context, r Resolver, ip, expectedDomain string) bool {
 	names, err := r.LookupAddr(ctx, ip)

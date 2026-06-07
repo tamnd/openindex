@@ -1,9 +1,9 @@
 // Package robots implements the Robots Exclusion Protocol as standardized in
 // RFC 9309, the access-control half of the crawler's provenance contract
 // (crawler doc 04.3, architecture doc 03). It is deliberately strict about the
-// rules a casual parser gets wrong — longest-match-wins independent of order,
+// rules a casual parser gets wrong - longest-match-wins independent of order,
 // case-insensitive user-agent matching but case-sensitive path matching,
-// `*`/`$` wildcards, the 500 KiB parse bound — because mis-parsing robots.txt
+// `*`/`$` wildcards, the 500 KiB parse bound - because mis-parsing robots.txt
 // is a consent violation, not a bug.
 //
 // crawl-delay is parsed and exposed as a best-effort politeness hint (it is not
@@ -190,8 +190,8 @@ func matchLen(pattern, path string) (int, bool) {
 }
 
 // matchGlob reports whether pattern matches a prefix of s, with `*` matching any
-// run of characters. A robots pattern is a prefix match by default — "/private"
-// matches "/private/x" — so success is declared the moment the pattern is
+// run of characters. A robots pattern is a prefix match by default - "/private"
+// matches "/private/x" - so success is declared the moment the pattern is
 // exhausted; when anchored ($) the match must additionally reach the end of s.
 // It is a two-pointer glob with backtracking on the last `*`.
 func matchGlob(pattern, s string, anchored bool) bool {

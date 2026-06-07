@@ -1,7 +1,7 @@
 // Package frontier is the crawl scheduler: it decides what to fetch next and
 // when, holding the politeness and prioritization policy of crawler doc 04.2.
-// It is built against two seams — a SeenSet (has this URL been enqueued
-// before?) and the host-politeness clock — so the in-memory reference
+// It is built against two seams - a SeenSet (has this URL been enqueued
+// before?) and the host-politeness clock - so the in-memory reference
 // implementations here can be swapped for the disk-backed DRUM store and a
 // distributed scheduler without touching the queue logic.
 package frontier
