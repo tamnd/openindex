@@ -1,0 +1,63 @@
+name: Release
+
+# Cut a release when a semver tag is pushed. Builds reproducible static binaries
+# for every role across the target platforms (impl spec 01.7): the open index is
+# verified by independent rebuild, so the build is pinned and trimmed.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  binaries:
+    name: ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        goos: [linux, darwin]
+        goarch: [amd64, arm64]
+    env:
+      CGO_ENABLED: "0"
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          check-latest: true
+
+      - name: Build roles
+        run: |
+          mkdir -p dist
+          version="${GITHUB_REF_NAME:-dev}"
+          ldflags="-s -w -X main.version=${version}"
+          for r in crawler indexer leaf aggregator root mixer answer publisher; do
+            [ -d "cmd/$r" ] || continue
+            out="dist/openindex-${r}-${GOOS}-${GOARCH}"
+            go build -trimpath -ldflags "$ldflags" -o "$out" "./cmd/$r"
+          done
+          (cd dist && sha256sum openindex-* > SHA256SUMS || shasum -a 256 openindex-* > SHA256SUMS)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/*
+
+  release:
+    needs: binaries
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
