@@ -1,29 +1,78 @@
-name: Release
+name: release
 
-# Cut a release when a semver tag is pushed. Builds reproducible static binaries
-# for every role across the target platforms (impl spec 01.7): the open index is
-# verified by independent rebuild, so the build is pinned and trimmed.
+# Cross-platform binary build, smoke test, and release publish.
+#
+# The build matrix compiles the openindex binary for every OS/arch the pure-Go
+# dependency stack supports, packages each as an archive with a checksum, and
+# proves the format matches the target with file(1). The smoke matrix then runs
+# the binary natively on every target that has a GitHub-hosted runner, so we know
+# the binaries start and report their version, not just that they link. On a
+# semver tag the publish job attaches the archives and checksums to a GitHub
+# release whose notes come from releases/<tag>.md.
+#
+# CGO stays disabled so the binaries are static and cross-compile cleanly; the
+# whole project is pure Go (the static, cross-compilable fleet of impl spec 01.7),
+# so the matrix is bounded only by the Go toolchain's own target list.
+
 on:
   push:
+    branches: [main]
     tags: ["v*"]
+  pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  binaries:
-    name: ${{ matrix.goos }}/${{ matrix.goarch }}
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: v
+        name: resolve build version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            v="${GITHUB_REF_NAME}"
+          else
+            v="$(git describe --tags --always --dirty 2>/dev/null || echo dev)"
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "resolved build version: $v"
+
+  build:
+    needs: version
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        goos: [linux, darwin]
-        goarch: [amd64, arm64]
-    env:
-      CGO_ENABLED: "0"
-      GOOS: ${{ matrix.goos }}
-      GOARCH: ${{ matrix.goarch }}
+        include:
+          - { goos: linux, goarch: amd64 }
+          - { goos: linux, goarch: arm64 }
+          - { goos: linux, goarch: arm }
+          - { goos: linux, goarch: "386" }
+          - { goos: linux, goarch: ppc64le }
+          - { goos: linux, goarch: s390x }
+          - { goos: linux, goarch: riscv64 }
+          - { goos: linux, goarch: loong64 }
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: windows, goarch: amd64 }
+          - { goos: windows, goarch: arm64 }
+          - { goos: windows, goarch: "386" }
+          - { goos: freebsd, goarch: amd64 }
+          - { goos: freebsd, goarch: arm64 }
+          - { goos: openbsd, goarch: amd64 }
+          - { goos: openbsd, goarch: arm64 }
+    name: build ${{ matrix.goos }}/${{ matrix.goarch }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -31,33 +80,151 @@ jobs:
           go-version: stable
           check-latest: true
 
-      - name: Build roles
+      - name: build binary
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
-          mkdir -p dist
-          version="${GITHUB_REF_NAME:-dev}"
-          ldflags="-s -w -X main.version=${version}"
-          for r in crawler indexer leaf aggregator root mixer answer publisher; do
-            [ -d "cmd/$r" ] || continue
-            out="dist/openindex-${r}-${GOOS}-${GOARCH}"
-            go build -trimpath -ldflags "$ldflags" -o "$out" "./cmd/$r"
-          done
-          (cd dist && sha256sum openindex-* > SHA256SUMS || shasum -a 256 openindex-* > SHA256SUMS)
+          set -euo pipefail
+          ext=""
+          [ "$GOOS" = "windows" ] && ext=".exe"
+          name="openindex_${VERSION}_${GOOS}_${GOARCH}"
+          dist="dist/${name}"
+          mkdir -p "$dist"
+          ldflags="-s -w -X main.version=${VERSION}"
+          go build -trimpath -ldflags "$ldflags" -o "${dist}/openindex${ext}" ./cmd/openindex
+          cp LICENSE README.md "$dist/"
+          echo "DIST=$dist" >> "$GITHUB_ENV"
+          echo "ARTIFACT=$name" >> "$GITHUB_ENV"
+
+      - name: verify binary format matches target
+        env:
+          GOOS: ${{ matrix.goos }}
+        run: |
+          set -euo pipefail
+          ext=""
+          [ "$GOOS" = "windows" ] && ext=".exe"
+          bin="${DIST}/openindex${ext}"
+          info="$(file -b "$bin")"
+          echo "$bin: $info"
+          case "$GOOS" in
+            linux|freebsd|openbsd) echo "$info" | grep -q "ELF" || { echo "expected ELF for $GOOS"; exit 1; } ;;
+            darwin) echo "$info" | grep -q "Mach-O" || { echo "expected Mach-O for darwin"; exit 1; } ;;
+            windows) echo "$info" | grep -q "PE32" || { echo "expected PE32 for windows"; exit 1; } ;;
+          esac
+          test -s "$bin"
+
+      - name: package archive and checksum
+        env:
+          GOOS: ${{ matrix.goos }}
+        run: |
+          set -euo pipefail
+          cd dist
+          if [ "$GOOS" = "windows" ]; then
+            zip -r "${ARTIFACT}.zip" "$ARTIFACT" >/dev/null
+            sha256sum "${ARTIFACT}.zip" > "${ARTIFACT}.zip.sha256"
+          else
+            tar -czf "${ARTIFACT}.tar.gz" "$ARTIFACT"
+            sha256sum "${ARTIFACT}.tar.gz" > "${ARTIFACT}.tar.gz.sha256"
+          fi
+          ls -l
 
       - uses: actions/upload-artifact@v4
         with:
-          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/*
+          name: ${{ env.ARTIFACT }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 14
 
-  release:
-    needs: binaries
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+  smoke:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-24.04, goos: linux, goarch: amd64 }
+          - { runner: ubuntu-24.04-arm, goos: linux, goarch: arm64 }
+          - { runner: macos-15, goos: darwin, goarch: arm64 }
+          - { runner: windows-2025, goos: windows, goarch: amd64 }
+          - { runner: windows-11-arm, goos: windows, goarch: arm64 }
+    name: smoke ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ${{ matrix.runner }}
     steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          check-latest: true
+
+      - name: build for host and run it
+        shell: bash
+        env:
+          CGO_ENABLED: "0"
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          ext=""
+          [ "${{ matrix.goos }}" = "windows" ] && ext=".exe"
+          ldflags="-X main.version=${VERSION}"
+          go build -trimpath -ldflags "$ldflags" -o "openindex${ext}" ./cmd/openindex
+
+          got="$(./openindex${ext} -version)"
+          echo "openindex -version => '$got' (want '$VERSION')"
+          [ "$got" = "$VERSION" ] || { echo "::error::version flag returned '$got', expected '$VERSION'"; exit 1; }
+
+          # The plan command must list every milestone; assert M0 and M9 are present.
+          plan="$(./openindex${ext} plan)"
+          echo "$plan" | grep -q "M0" || { echo "::error::plan did not list M0"; exit 1; }
+          echo "$plan" | grep -q "M9" || { echo "::error::plan did not list M9"; exit 1; }
+
+  build-complete:
+    name: build-complete
+    if: always()
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    steps:
+      - name: gate on all builds and smoke tests
+        run: |
+          echo "build: ${{ needs.build.result }}"
+          echo "smoke: ${{ needs.smoke.result }}"
+          if [ "${{ needs.build.result }}" != "success" ] || [ "${{ needs.smoke.result }}" != "success" ]; then
+            echo "::error::one or more cross-platform build or smoke jobs failed"
+            exit 1
+          fi
+          echo "all targets compiled and every runner-backed target ran natively"
+
+  publish:
+    name: publish release
+    needs: [version, build, smoke]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
+      - name: resolve release notes
+        id: notes
+        run: |
+          f="releases/${GITHUB_REF_NAME}.md"
+          if [ -f "$f" ]; then
+            echo "found release notes at $f"
+            echo "body_path=$f" >> "$GITHUB_OUTPUT"
+          else
+            echo "no release notes file at $f; falling back to generated notes"
+            echo "body_path=" >> "$GITHUB_OUTPUT"
+          fi
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/*
-          generate_release_notes: true
+          body_path: ${{ steps.notes.outputs.body_path }}
+          generate_release_notes: ${{ steps.notes.outputs.body_path == '' }}
+          fail_on_unmatched_files: true
