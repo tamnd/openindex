@@ -1,0 +1,198 @@
+// The OpenIndex internal data plane. Every inter-process call in the engine is
+// a gRPC method defined here; this file is the single source of truth for the
+// wire format (impl spec 02.4). Domain logic converts these messages to the
+// Go types it owns at its package edge — these types do not travel deep into
+// scoring or merge code (impl spec 02.6).
+//
+// Compatibility rule: fields are added, never renumbered or repurposed; removed
+// fields are reserved. The snapshot id and codec version travel in the request
+// so a leaf can reject a format it cannot read instead of misreading it.
+syntax = "proto3";
+
+package openindex.v1;
+
+option go_package = "openindex/proto;proto";
+
+// ----------------------------------------------------------------------------
+// Search fan-out: root -> aggregator -> leaf (impl spec 08).
+// ----------------------------------------------------------------------------
+
+// SearchReq is the query as it enters the serving tree and is fanned out
+// unchanged to every aggregator.
+message SearchReq {
+  string query = 1;
+  uint32 top_k = 2;
+  // snapshot pins the index version this query must be answered from; a leaf
+  // holding a different snapshot rejects rather than mixing results.
+  string snapshot = 3;
+  // deadline_unix_nanos is the absolute edge deadline. Every hop inherits the
+  // remaining budget rather than starting a fresh timeout (impl spec 01.2).
+  int64 deadline_unix_nanos = 4;
+}
+
+// SearchShardReq is the per-leaf request. It is a SearchReq plus the shard the
+// leaf must restrict to, so one aggregator can address many shards on one host.
+message SearchShardReq {
+  SearchReq req = 1;
+  uint32 shard = 2;
+}
+
+// ScoredDoc is one hit. doc_id is segment-local and valid only for this query;
+// url and content_hash are the durable external identity (impl spec 02.4).
+message ScoredDoc {
+  uint64 segment = 1;
+  uint32 doc_id = 2;
+  float score = 3;
+  string url = 4;
+  bytes content_hash = 5;
+}
+
+message SearchShardResp {
+  repeated ScoredDoc hits = 1;
+  // total_matched is the shard's match count before top-k truncation, summed
+  // up the tree into an estimated result count.
+  uint64 total_matched = 2;
+}
+
+message SearchResp {
+  repeated ScoredDoc hits = 1;
+  uint64 total_matched = 2;
+  // partial is set when the cutoff fired before every shard answered; the
+  // result is usable but not exhaustive (impl spec 08 good-enough cutoff).
+  bool partial = 3;
+}
+
+service Leaf {
+  // Search scores one shard under the inherited deadline.
+  rpc Search(SearchShardReq) returns (SearchShardResp);
+}
+
+service Aggregator {
+  rpc Search(SearchReq) returns (SearchResp);
+}
+
+service Root {
+  rpc Search(SearchReq) returns (SearchResp);
+}
+
+// ----------------------------------------------------------------------------
+// Snippets (impl spec 08.6): hydrate the surviving top-k with text.
+// ----------------------------------------------------------------------------
+
+message SnippetReq {
+  string query = 1;
+  repeated ScoredDoc docs = 2;
+}
+
+message Snippet {
+  uint64 segment = 1;
+  uint32 doc_id = 2;
+  string title = 3;
+  string text = 4;
+}
+
+message SnippetResp {
+  repeated Snippet snippets = 1;
+}
+
+service Snippets {
+  rpc Snippet(SnippetReq) returns (SnippetResp);
+}
+
+// ----------------------------------------------------------------------------
+// Embedding generation (impl spec 06). Batched: one call embeds N texts so the
+// accelerator boundary is crossed in bulk, never per vector (impl spec 01.1).
+// ----------------------------------------------------------------------------
+
+message EmbedReq {
+  repeated string texts = 1;
+}
+
+message Vector {
+  repeated float values = 1;
+}
+
+message EmbedResp {
+  repeated Vector vectors = 1;
+}
+
+service Embed {
+  rpc Embed(EmbedReq) returns (EmbedResp);
+}
+
+// ----------------------------------------------------------------------------
+// Answer synthesis (impl spec 09). Streamed so time-to-first-token is visible.
+// ----------------------------------------------------------------------------
+
+message AnswerReq {
+  string query = 1;
+  repeated Snippet context = 2;
+}
+
+// GroundingSupport ties a span of the generated answer to the source chunk that
+// supports it (impl spec 09 grounding data model).
+message GroundingSupport {
+  uint32 start = 1;       // character offset into the answer text
+  uint32 end = 2;
+  uint32 chunk_index = 3; // index into AnswerReq.context
+}
+
+message AnswerChunk {
+  string text = 1;
+  repeated GroundingSupport supports = 2;
+  bool done = 3;
+}
+
+service Synthesize {
+  rpc Answer(AnswerReq) returns (stream AnswerChunk);
+}
+
+// ----------------------------------------------------------------------------
+// Indexing ingest (impl spec 04 -> 05). Streamed: an unbounded sequence of
+// document batches flows from the crawler/indexer into the segment writer.
+// ----------------------------------------------------------------------------
+
+message Document {
+  string url = 1;
+  bytes content_hash = 2;
+  string title = 3;
+  string body = 4;
+  int64 fetched_unix_nanos = 5;
+}
+
+message DocBatch {
+  repeated Document docs = 1;
+}
+
+message PushAck {
+  uint64 accepted = 1;
+  string segment = 2;
+}
+
+service Indexer {
+  rpc Push(stream DocBatch) returns (PushAck);
+}
+
+// ----------------------------------------------------------------------------
+// Control plane (impl spec 10): the cluster watches a strongly-consistent
+// metadata stream for shard placement and config.
+// ----------------------------------------------------------------------------
+
+message WatchReq {
+  string role = 1;
+}
+
+message ShardAssignment {
+  uint32 shard = 1;
+  repeated string replicas = 2; // host:port of each replica serving the shard
+}
+
+message ClusterState {
+  string snapshot = 1;
+  repeated ShardAssignment shards = 2;
+  uint64 version = 3;
+}
+
+service Control {
+  rpc Watch(WatchReq) returns (stream ClusterState);
+}
