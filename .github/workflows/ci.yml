@@ -85,9 +85,9 @@ jobs:
         with:
           go-version: stable
           check-latest: true
-      - uses: bufbuild/buf-setup-action@v1
+      - uses: arduino/setup-protoc@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install protoc-gen-go plugins
         run: |
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -98,4 +98,16 @@ jobs:
           protoc --go_out=. --go_opt=module=openindex \
                  --go-grpc_out=. --go-grpc_opt=module=openindex \
                  proto/openindex.proto
-          git diff --exit-code -- 'proto/*.pb.go'
+          # The generated header stamps the protoc build version, which differs
+          # between the local toolchain and the CI runner. Ignore that one
+          # comment line so the check is about the schema, not the toolchain.
+          strip() { sed -E '/^\/\/.*protoc[[:space:]]+v[0-9]/d' "$1"; }
+          fail=0
+          for f in proto/*.pb.go; do
+            if ! diff -u <(git show "HEAD:$f" | sed -E '/^\/\/.*protoc[[:space:]]+v[0-9]/d') \
+                         <(strip "$f"); then
+              echo "::error::$f is out of date; run 'make proto'"
+              fail=1
+            fi
+          done
+          exit $fail
