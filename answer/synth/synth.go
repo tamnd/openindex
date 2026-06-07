@@ -112,9 +112,8 @@ func Consolidate(passages []answer.Passage, perSource int) []answer.Passage {
 	// Rank within each source by score without disturbing the global order: tag
 	// each passage with its within-source rank, then keep those under the cap.
 	type tagged struct {
-		p    answer.Passage
-		pos  int
-		rank int
+		p   answer.Passage
+		pos int
 	}
 	bySource := map[string][]tagged{}
 	tags := make([]tagged, len(passages))

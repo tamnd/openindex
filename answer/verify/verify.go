@@ -206,8 +206,11 @@ func (o OverlapVerifier) Entail(claim string, passage answer.Passage) Verdict {
 // small stopword set, so the overlap score is over meaning-bearing words rather
 // than glue words that every passage shares.
 func contentWords(s string) []string {
+	isWord := func(r rune) bool {
+		return (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')
+	}
 	fields := strings.FieldsFunc(strings.ToLower(s), func(r rune) bool {
-		return !(r >= 'a' && r <= 'z') && !(r >= '0' && r <= '9')
+		return !isWord(r)
 	})
 	out := fields[:0]
 	for _, w := range fields {
