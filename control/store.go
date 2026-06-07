@@ -45,6 +45,12 @@ type Event struct {
 type Store interface {
 	Get(ctx context.Context, key string) ([]byte, bool, error)
 	Put(ctx context.Context, key string, value []byte, lease LeaseID) error
+	// Create writes key only if it is absent and reports whether it did. It is
+	// the compare-and-claim that leader election needs (doc 10.1's elections):
+	// the first candidate to create the leader key wins, the rest see it taken.
+	// etcd does this with a transaction guarded on the key's create revision
+	// being zero.
+	Create(ctx context.Context, key string, value []byte, lease LeaseID) (bool, error)
 	Delete(ctx context.Context, key string) error
 	List(ctx context.Context, prefix string) (map[string][]byte, error)
 	Watch(ctx context.Context, prefix string) (<-chan Event, error)
@@ -109,6 +115,24 @@ func (m *MemStore) Put(_ context.Context, key string, value []byte, lease LeaseI
 	m.fan(Event{Type: EventPut, Key: key, Value: value})
 	m.mu.Unlock()
 	return nil
+}
+
+// Create writes key only if it is absent, returning whether it created it. It is
+// the atomic claim election relies on: two candidates that race to create the
+// same leader key, only one wins.
+func (m *MemStore) Create(_ context.Context, key string, value []byte, lease LeaseID) (bool, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.kv[key]; ok {
+		return false, nil
+	}
+	m.kv[key] = value
+	if lease != 0 {
+		m.leaseOf[key] = lease
+		m.keysOf[lease] = appendUnique(m.keysOf[lease], key)
+	}
+	m.fan(Event{Type: EventPut, Key: key, Value: value})
+	return true, nil
 }
 
 // Delete removes key.
