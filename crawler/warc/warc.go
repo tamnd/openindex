@@ -5,7 +5,7 @@
 //
 // Each record is an independent gzip member, so the concatenation is still a
 // valid gzip stream and any single record can be extracted by
-// (file, byte offset, compressed length) without inflating the whole file —
+// (file, byte offset, compressed length) without inflating the whole file -
 // exactly what an answer-engine citation needs to resolve to an archived
 // artifact (doc 09). Production read/write uses internetarchive/gowarc; this is
 // the dependency-free writer the format is tested against.

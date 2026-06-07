@@ -149,7 +149,7 @@ func (c *Cursor) Next() bool {
 
 // NextGEQ advances to the first document with id >= target and returns it, or
 // reports Done if none. It uses the skip table to jump whole blocks whose
-// lastDoc is below target without decoding them — the advance(target) fast path
+// lastDoc is below target without decoding them - the advance(target) fast path
 // (doc 05.3).
 func (c *Cursor) NextGEQ(target openindex.DocID) (openindex.DocID, bool) {
 	if c.Done() {

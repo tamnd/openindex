@@ -24,7 +24,7 @@ const Priorities = 8
 
 // politeness derives the minimum gap before a host may be fetched again from how
 // long its last fetch took: gap = factor * lastFetchDuration, bounded by min/max.
-// This is Mercator's adaptive back-off — slow hosts are hit less often — rather
+// This is Mercator's adaptive back-off - slow hosts are hit less often - rather
 // than a flat delay (04.2). A robots crawl-delay, when present, raises the floor.
 type politeness struct {
 	factor   int

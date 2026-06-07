@@ -1,7 +1,7 @@
 // The OpenIndex internal data plane. Every inter-process call in the engine is
 // a gRPC method defined here; this file is the single source of truth for the
 // wire format (impl spec 02.4). Domain logic converts these messages to the
-// Go types it owns at its package edge — these types do not travel deep into
+// Go types it owns at its package edge - these types do not travel deep into
 // scoring or merge code (impl spec 02.6).
 //
 // Compatibility rule: fields are added, never renumbered or repurposed; removed

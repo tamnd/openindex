@@ -5,8 +5,8 @@
 //
 // The wire types live in package proto; these are the in-process domain types
 // that each subsystem converts to at its edge (impl spec 02.6). Keeping the
-// shared vocabulary — what a document id is, what a snapshot is named, how a
-// score compares — in one place stops every package from inventing its own.
+// shared vocabulary - what a document id is, what a snapshot is named, how a
+// score compares - in one place stops every package from inventing its own.
 package openindex
 
 import "fmt"
@@ -40,7 +40,7 @@ type TermID uint32
 type Score float32
 
 // Less reports whether s should rank below other. Higher scores rank first, so
-// Less is the reverse of the numeric order — it is the comparator a min-heap of
+// Less is the reverse of the numeric order - it is the comparator a min-heap of
 // the top-k results wants.
 func (s Score) Less(other Score) bool { return s > other }
 
@@ -51,7 +51,7 @@ func (s Score) Less(other Score) bool { return s > other }
 // (impl spec 02.4).
 type SnapshotID string
 
-// ContentHash is the content address of a fetched resource — the durable,
+// ContentHash is the content address of a fetched resource - the durable,
 // dedup-friendly identity of bytes on the web, independent of the URL they were
 // served from (impl spec 03, 04).
 type ContentHash [32]byte

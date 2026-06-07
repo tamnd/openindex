@@ -1,7 +1,7 @@
 // Package embed is the embedding-serving boundary (architecture doc 06.5). The
 // decision there is firm: embeddings come from an open dual-encoder
 // (Qwen3-Embedding, BGE-M3, multilingual-E5) served as a separate process
-// behind gRPC — never in the Go binary, never over cgo — because a transformer
+// behind gRPC - never in the Go binary, never over cgo - because a transformer
 // forward pass is GPU work that belongs in a Rust/Python inference server (TEI)
 // with token-based dynamic batching, not bolted into the search fleet.
 //
@@ -38,7 +38,7 @@ var ErrClosed = errors.New("embed: embedder closed")
 
 // HashEmbedder is a deterministic, dependency-free reference Embedder: it maps
 // text to a unit vector by hashing tokens into dimensions (the hashing-trick /
-// random-projection sketch). It is NOT semantic — it shares the real model's
+// random-projection sketch). It is NOT semantic - it shares the real model's
 // interface, output dimension, and L2-normalized output, which is all the rest
 // of the engine needs to be exercised offline. The same text always yields the
 // same vector, so index builds and tests are reproducible.

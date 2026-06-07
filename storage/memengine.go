@@ -10,8 +10,8 @@ import (
 // WebTable and link-graph code are tested against. It keeps entries in one
 // lexicographically sorted slice with binary-search lookups, which is the
 // access shape a real LSM presents (point get, ordered range scan) without the
-// on-disk machinery. It is not the production store — that is Pebble/Badger/bbolt
-// behind this same interface (03.1) — but it is correct, snapshot-isolated, and
+// on-disk machinery. It is not the production store - that is Pebble/Badger/bbolt
+// behind this same interface (03.1) - but it is correct, snapshot-isolated, and
 // concurrency-safe, which is what the tests need.
 type MemEngine struct {
 	mu      sync.RWMutex
@@ -122,7 +122,7 @@ func (m *MemEngine) scanLocked(start, end []byte) Iterator {
 }
 
 // Snapshot implements Engine by copying the current entries. A copy is the
-// honest semantics — later writes cannot be seen — and is fine at test scale; a
+// honest semantics - later writes cannot be seen - and is fine at test scale; a
 // production engine uses its native MVCC snapshot here.
 func (m *MemEngine) Snapshot() Snapshot {
 	m.mu.RLock()

@@ -3,7 +3,7 @@ package postings
 // Group-varint encodes integers four at a time: one control byte holds four
 // 2-bit length fields (each 0..3, meaning 1..4 data bytes), followed by the data
 // bytes for the group. Decoding reads the control byte once and then copies
-// known-length runs, which is branch-free per value — the reason Google's
+// known-length runs, which is branch-free per value - the reason Google's
 // VarintGB beats a branch-per-byte LEB128 on the decode hot path (doc 05.2).
 // The codec uses it for the final under-128 block, where fixed-width FOR packing
 // would waste bits on a short run.

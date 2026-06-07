@@ -1,6 +1,6 @@
 // Package dedup detects duplicate and near-duplicate pages (crawler doc 04.6).
 // Exact duplicates are caught by a content hash a cryptographic digest can see;
-// near-duplicates — boilerplate-heavy pages that differ in a sentence — need
+// near-duplicates - boilerplate-heavy pages that differ in a sentence - need
 // Charikar's 64-bit SimHash, whose fingerprint is 8 bytes (versus 24 for Broder
 // shingles), which is what lets a billion-document table fit in memory.
 //
@@ -23,7 +23,7 @@ import (
 // fingerprints are considered near-duplicates (04.6).
 const HammingThreshold = 3
 
-// ContentHash returns the exact content address of a page body — the cheap
+// ContentHash returns the exact content address of a page body - the cheap
 // first-line dedup that catches byte-identical copies before SimHash is needed.
 func ContentHash(body []byte) openindex.ContentHash {
 	return sha256.Sum256(body)

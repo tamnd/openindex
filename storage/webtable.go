@@ -7,7 +7,7 @@ import (
 
 // WebTable is the Bigtable-style document store (storage doc 03.2): a sparse,
 // multi-version, column-family map over the crawled web, keyed for crawl and
-// link locality. It is a thin schema layer over an Engine — the key layout is
+// link locality. It is a thin schema layer over an Engine - the key layout is
 // the design, the storage is pluggable.
 //
 // Row key is the reversed hostname followed by the path, so every page of a
@@ -66,8 +66,8 @@ func RowKey(host, path string) []byte {
 }
 
 // cellKey encodes a fully-qualified cell key with order-preserving segment
-// framing so that (a) row keys keep their lexicographic order — a site's pages
-// stay contiguous — and (b) a prefix scan over a row, or a row+family, is one
+// framing so that (a) row keys keep their lexicographic order - a site's pages
+// stay contiguous - and (b) a prefix scan over a row, or a row+family, is one
 // engine range. Layout:
 //
 //	orderedBytes(rowKey) | family(1) | orderedBytes(qualifier) | ^ts(8 BE)
@@ -95,7 +95,7 @@ func rowFamilyPrefix(row []byte, fam Family) []byte {
 // appendOrdered writes a length-independent, order-preserving encoding of seg
 // to dst: each 0x00 byte becomes 0x00 0xFF and the segment is terminated with
 // 0x00 0x00. The terminator sorts below any encoded data byte, so a segment
-// that is a prefix of another sorts first — exactly the lexicographic order a
+// that is a prefix of another sorts first - exactly the lexicographic order a
 // raw byte compare would give the unframed segments, but now unambiguously
 // delimited from the next field.
 func appendOrdered(dst, seg []byte) []byte {

@@ -4,8 +4,8 @@
 // imports nothing else in the module.
 //
 // The interfaces here are deliberately small and provider-agnostic. The full
-// OpenTelemetry wiring — the gRPC stats handler, the SLO-aligned histogram
-// buckets, the cardinality caps — is configured in impl spec 12; this package
+// OpenTelemetry wiring - the gRPC stats handler, the SLO-aligned histogram
+// buckets, the cardinality caps - is configured in impl spec 12; this package
 // is the seam the rest of the code instruments against so that wiring can be
 // swapped without touching call sites.
 package telemetry
@@ -26,7 +26,7 @@ type Meter interface {
 }
 
 // NopMeter discards every observation. It is the safe default so that a service
-// with no configured MeterProvider still runs — but note that the real default
+// with no configured MeterProvider still runs - but note that the real default
 // OTel provider silently drops metrics, which looks like working
 // instrumentation and is not (impl spec 01.5); a role must install a real Meter
 // in production.

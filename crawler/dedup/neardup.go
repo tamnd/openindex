@@ -5,7 +5,7 @@ package dedup
 // (crawler doc 04.6). It uses the banded pigeonhole trick: split each 64-bit
 // fingerprint into 4 blocks of 16 bits and key one table per block. If two
 // fingerprints differ in at most 3 bits, those 3 differing bits touch at most 3
-// of the 4 blocks, so at least one block is identical — and a lookup in that
+// of the 4 blocks, so at least one block is identical - and a lookup in that
 // block's table will surface the candidate. Each candidate is then confirmed
 // with a full Hamming check, so the scheme has no false positives and no false
 // negatives at distance <= 3.

@@ -4,8 +4,8 @@
 // for the Block-Max WAND retrieval loop (doc 05.3).
 //
 // The codec is split from the segment engine deliberately (doc 05.5): postings
-// are one versioned codec component, so this format can evolve — or be swapped
-// for partitioned Elias-Fano on list shapes that favor it — without touching the
+// are one versioned codec component, so this format can evolve - or be swapped
+// for partitioned Elias-Fano on list shapes that favor it - without touching the
 // term dictionary or the merge scheduler. The decode path is written as
 // branch-free block bit-unpacking with a scalar Go fallback, so the format stays
 // architecture-independent while leaving room for a SIMD specialization later.

@@ -1,6 +1,6 @@
 // Package segment is the immutable index unit (indexer doc 05.6): a
 // self-contained bundle of a term dictionary, posting lists, a forward store,
-// and a live-docs bitset. Segments are never mutated in place — a delete clears
+// and a live-docs bitset. Segments are never mutated in place - a delete clears
 // a live bit and space is reclaimed only when the tiered merge policy
 // re-indexes live documents into a new segment with fresh dense doc IDs. That
 // immutability is what makes the index object-storage-friendly and the open
@@ -160,7 +160,7 @@ func (b *Builder) Build() (*Segment, error) {
 }
 
 // Merge re-indexes the live documents of several segments into one new segment
-// with fresh dense doc IDs, in the input order, dropping deleted documents — the
+// with fresh dense doc IDs, in the input order, dropping deleted documents - the
 // space-reclaiming half of the tiered merge (doc 05.6). The terms of all inputs
 // are unioned and their posting lists concatenated in new-id order, which stays
 // sorted because new ids are assigned in a single ascending pass.
